@@ -4,12 +4,29 @@ export type WeightedParticipant = {
   tickets: number;
 };
 
+type SortablePrize = {
+  sort_order: number;
+  created_at: string;
+};
+
 type SelectWeightedWinnersInput = {
   participants: WeightedParticipant[];
   totalSlots: number;
   allowDuplicateWinners: boolean;
   rng?: () => number;
 };
+
+export function sortPrizesForDraw<TPrize extends SortablePrize>(
+  prizes: TPrize[],
+): TPrize[] {
+  return [...prizes].sort((left, right) => {
+    if (left.sort_order !== right.sort_order) {
+      return left.sort_order - right.sort_order;
+    }
+
+    return left.created_at.localeCompare(right.created_at);
+  });
+}
 
 export function selectWeightedWinners({
   participants,

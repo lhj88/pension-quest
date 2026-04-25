@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { sortPrizesForDraw } from "@/lib/draw";
 import { summarizeClaims } from "@/lib/stats";
 import type {
   AppConfig,
@@ -142,13 +143,14 @@ export async function getPrizes(): Promise<Prize[]> {
   const { data, error } = await supabase
     .from("prizes")
     .select("*")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
   if (error) {
     throw error;
   }
 
-  return data ?? [];
+  return sortPrizesForDraw(data ?? []);
 }
 
 export async function getActivePrizes(): Promise<Prize[]> {
@@ -170,5 +172,15 @@ export async function getDrawResults(): Promise<DrawResultView[]> {
     throw error;
   }
 
-  return (data ?? []) as unknown as DrawResultView[];
+  return ((data ?? []) as unknown as DrawResultView[]).sort((left, right) => {
+    if (left.prize.sort_order !== right.prize.sort_order) {
+      return left.prize.sort_order - right.prize.sort_order;
+    }
+
+    if (left.position !== right.position) {
+      return left.position - right.position;
+    }
+
+    return left.created_at.localeCompare(right.created_at);
+  });
 }

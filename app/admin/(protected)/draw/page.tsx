@@ -41,7 +41,8 @@ export default async function AdminDrawPage() {
         <h2 className="text-xl font-black text-slate-950">가중 추첨 실행</h2>
         <p className="mt-2 text-sm text-slate-600">
           응모권 수가 많을수록 당첨 확률이 높아집니다. 실행하면 기존 추첨
-          결과를 새 결과로 교체합니다.
+          결과를 새 결과로 교체합니다. 상품은 추첨 순서가 낮은 것부터
+          당첨자를 배정합니다.
         </p>
         <form action={runDraw} className="mt-5 grid gap-4">
           <label className="flex items-center gap-2 text-sm font-bold text-slate-700">

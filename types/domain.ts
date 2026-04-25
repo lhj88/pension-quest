@@ -35,6 +35,7 @@ export type Prize = {
   description: string;
   quantity: number;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
 };
 

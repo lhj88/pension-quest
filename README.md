@@ -22,6 +22,7 @@ lib/
   stats.ts                    # 점수/응모권 집계
 supabase/
   migrations/0001_initial_schema.sql
+  migrations/0002_add_prize_sort_order.sql
   seed.sql
 scripts/list-qr-urls.ts
 tests/
@@ -45,7 +46,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ## DB schema
 
-`supabase/migrations/0001_initial_schema.sql`를 Supabase SQL Editor에서 먼저 실행한 뒤, `supabase/seed.sql`를 실행합니다.
+`supabase/migrations/`의 SQL을 번호순으로 Supabase SQL Editor에서 먼저 실행한 뒤, `supabase/seed.sql`를 실행합니다.
 
 주요 테이블:
 
@@ -81,6 +82,7 @@ prizes
   description text
   quantity integer
   is_active boolean
+  sort_order integer
   created_at timestamptz
 
 draw_results
@@ -108,7 +110,7 @@ cp .env.example .env.local
 
 Supabase 프로젝트를 만든 뒤:
 
-1. Supabase SQL Editor에서 `supabase/migrations/0001_initial_schema.sql` 실행
+1. Supabase SQL Editor에서 `supabase/migrations/` SQL을 번호순으로 실행
 2. 이어서 `supabase/seed.sql` 실행
 3. `.env.local`에 Supabase URL, anon key, service role key, admin password 입력
 

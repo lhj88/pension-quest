@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { selectWeightedWinners } from "@/lib/draw";
+import { selectWeightedWinners, sortPrizesForDraw } from "@/lib/draw";
 
 const participants = [
   { id: "alice", name: "앨리스", tickets: 1 },
@@ -40,5 +40,56 @@ describe("selectWeightedWinners", () => {
     });
 
     expect(winners.map((winner) => winner.id)).not.toContain("zero");
+  });
+});
+
+describe("sortPrizesForDraw", () => {
+  const prizes = [
+    {
+      id: "late",
+      name: "늦게 뽑을 상품",
+      description: "",
+      quantity: 1,
+      is_active: true,
+      sort_order: 30,
+      created_at: "2026-04-24T00:03:00.000Z",
+    },
+    {
+      id: "early",
+      name: "먼저 뽑을 상품",
+      description: "",
+      quantity: 1,
+      is_active: true,
+      sort_order: 10,
+      created_at: "2026-04-24T00:02:00.000Z",
+    },
+    {
+      id: "middle",
+      name: "가운데 상품",
+      description: "",
+      quantity: 1,
+      is_active: true,
+      sort_order: 20,
+      created_at: "2026-04-24T00:01:00.000Z",
+    },
+  ];
+
+  it("orders prizes by draw order", () => {
+    const ordered = sortPrizesForDraw(prizes);
+
+    expect(ordered.map((prize) => prize.id)).toEqual([
+      "early",
+      "middle",
+      "late",
+    ]);
+  });
+
+  it("keeps older prize first when draw order matches", () => {
+    const ordered = sortPrizesForDraw([
+      { ...prizes[0], id: "newer", sort_order: 10 },
+      { ...prizes[1], id: "older", sort_order: 10 },
+    ]);
+
+    expect(ordered.map((prize) => prize.id)).toEqual(["older", "newer"]);
   });
 });
