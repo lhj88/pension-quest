@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 
 import { cx, EmptyState } from "@/components/ui";
 
+import {
+  getRevealNavigationIntent,
+  shouldRevealSecondPartForKey,
+} from "./reveal-flow";
+
 type RevealMode = "name-first" | "prize-first";
 
 export type DrawRevealResult = {
@@ -30,22 +35,86 @@ export function DrawReveal({ results }: DrawRevealProps) {
   const [isSecondPartVisible, setIsSecondPartVisible] = useState(false);
 
   const currentResult = results[currentIndex];
+  const canRevealSecondPart =
+    hasStarted && !isSecondPartVisible && results.length > 0;
+  const canShowPreviousResult = hasStarted && currentIndex > 0;
+  const canShowNextResult =
+    hasStarted &&
+    isSecondPartVisible &&
+    currentIndex < results.length - 1;
   const isComplete =
     hasStarted && results.length > 0 && currentIndex === results.length - 1;
 
   useEffect(() => {
-    if (!hasStarted || results.length === 0) {
+    if (!canRevealSecondPart) {
       return;
     }
 
-    const timeoutId = window.setTimeout(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!shouldRevealSecondPartForKey(event.key)) {
+        return;
+      }
+
+      event.preventDefault();
       setIsSecondPartVisible(true);
-    }, 900);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.clearTimeout(timeoutId);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [currentIndex, hasStarted, mode, results.length]);
+  }, [canRevealSecondPart]);
+
+  useEffect(() => {
+    if (!hasStarted) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      const intent = getRevealNavigationIntent(event.key);
+
+      if (intent === "previous" && currentIndex > 0) {
+        event.preventDefault();
+        setIsSecondPartVisible(false);
+        setCurrentIndex((index) => Math.max(0, index - 1));
+        return;
+      }
+
+      if (
+        intent === "next" &&
+        isSecondPartVisible &&
+        currentIndex < results.length - 1
+      ) {
+        event.preventDefault();
+        setIsSecondPartVisible(false);
+        setCurrentIndex((index) => Math.min(results.length - 1, index + 1));
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentIndex, hasStarted, isSecondPartVisible, results.length]);
+
+  function revealSecondPart() {
+    if (!canRevealSecondPart) {
+      return;
+    }
+
+    setIsSecondPartVisible(true);
+  }
+
+  function handleRevealKeyDown(event: React.KeyboardEvent<HTMLElement>) {
+    if (!shouldRevealSecondPartForKey(event.key)) {
+      return;
+    }
+
+    event.preventDefault();
+    revealSecondPart();
+  }
 
   function resetReveal(nextMode = mode) {
     setMode(nextMode);
@@ -101,7 +170,22 @@ export function DrawReveal({ results }: DrawRevealProps) {
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50">
+      <section
+        aria-label={
+          canRevealSecondPart
+            ? "다음 공개 정보를 보여주기"
+            : "당첨 공개 화면"
+        }
+        className={cx(
+          "overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50",
+          canRevealSecondPart &&
+            "cursor-pointer transition hover:border-amber-300",
+        )}
+        onClick={revealSecondPart}
+        onKeyDown={handleRevealKeyDown}
+        role={canRevealSecondPart ? "button" : undefined}
+        tabIndex={canRevealSecondPart ? 0 : -1}
+      >
         <div className="border-b border-amber-200 bg-white/70 px-4 py-3">
           <p className="text-sm font-black text-amber-900">
             {hasStarted ? `${currentIndex + 1}번째 당첨` : "공개 대기"}
@@ -142,6 +226,11 @@ export function DrawReveal({ results }: DrawRevealProps) {
                 }
                 tone={mode === "name-first" ? "slate" : "emerald"}
               />
+              {!isSecondPartVisible ? (
+                <p className="text-sm font-bold text-amber-800">
+                  클릭하거나 Space / Enter로 다음 정보를 공개하세요.
+                </p>
+              ) : null}
             </>
           ) : (
             <div className="mx-auto max-w-xl">
@@ -173,7 +262,7 @@ export function DrawReveal({ results }: DrawRevealProps) {
         </button>
         <button
           className="min-h-12 rounded-[8px] border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
-          disabled={!hasStarted || currentIndex === 0}
+          disabled={!canShowPreviousResult}
           onClick={showPreviousResult}
           type="button"
         >
@@ -181,7 +270,7 @@ export function DrawReveal({ results }: DrawRevealProps) {
         </button>
         <button
           className="min-h-12 rounded-[8px] border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-800 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
-          disabled={!hasStarted || currentIndex === results.length - 1}
+          disabled={!canShowNextResult}
           onClick={showNextResult}
           type="button"
         >
