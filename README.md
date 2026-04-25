@@ -150,6 +150,7 @@ npm run qr:urls
 ```
 
 `NEXT_PUBLIC_APP_URL`은 실제 배포 URL로 설정해야 인쇄된 QR이 배포 앱을 가리킵니다.
+현재 실서비스 도메인은 `https://pension-quest-chi.vercel.app`입니다.
 
 ## Vercel deploy
 
@@ -160,7 +161,7 @@ npm run qr:urls
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `ADMIN_PASSWORD`
-   - `NEXT_PUBLIC_APP_URL` = `https://your-vercel-domain.vercel.app`
+   - `NEXT_PUBLIC_APP_URL` = `https://pension-quest-chi.vercel.app`
 4. Supabase SQL Editor에서 migration과 seed를 적용합니다.
 5. Vercel에서 Deploy를 실행합니다.
 6. 배포 후 `/admin`에서 로그인하고 `/admin/qr`의 QR 카드를 인쇄합니다.
