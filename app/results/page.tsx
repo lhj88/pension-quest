@@ -8,6 +8,8 @@ import {
 } from "@/components/ui";
 import { getAppConfig, getDrawResults, getLeaderboard } from "@/lib/data";
 
+import { DrawReveal } from "./draw-reveal";
+
 export const dynamic = "force-dynamic";
 
 export default async function ResultsPage() {
@@ -16,29 +18,13 @@ export default async function ResultsPage() {
     getDrawResults(),
     getLeaderboard(),
   ]);
-  const grouped = results.reduce<
-    Array<{
-      prizeId: string;
-      prizeName: string;
-      prizeDescription: string;
-      winners: string[];
-    }>
-  >((groups, result) => {
-    const existing = groups.find((group) => group.prizeId === result.prize_id);
-
-    if (existing) {
-      existing.winners.push(result.participant.name);
-      return groups;
-    }
-
-    groups.push({
-      prizeId: result.prize_id,
-      prizeName: result.prize.name,
-      prizeDescription: result.prize.description,
-      winners: [result.participant.name],
-    });
-    return groups;
-  }, []);
+  const revealResults = results.map((result) => ({
+    id: result.id,
+    participantName: result.participant.name,
+    prizeName: result.prize.name,
+    prizeDescription: result.prize.description,
+    position: result.position,
+  }));
 
   return (
     <PageShell>
@@ -52,7 +38,7 @@ export default async function ResultsPage() {
             오늘의 보물찾기 결과
           </h1>
           <p className="mt-3 max-w-2xl text-slate-200">
-            점수 순위와 추첨 결과를 한 화면에서 확인하세요.
+            진행자가 선택한 순서로 당첨 결과를 한 명씩 공개하세요.
           </p>
         </header>
 
@@ -70,32 +56,7 @@ export default async function ResultsPage() {
         </section>
 
         <Card>
-          <h2 className="text-2xl font-black text-slate-950">당첨자</h2>
-          <div className="mt-4 grid gap-3">
-            {grouped.length === 0 ? (
-              <EmptyState
-                title="아직 추첨 결과가 없어요"
-                description="관리자가 추첨을 실행하면 이곳에 당첨자가 표시됩니다."
-              />
-            ) : (
-              grouped.map((group) => (
-                <article
-                  className="rounded-[8px] border border-amber-200 bg-amber-50 p-4"
-                  key={group.prizeId}
-                >
-                  <p className="text-sm font-bold text-amber-800">
-                    {group.prizeDescription}
-                  </p>
-                  <h3 className="mt-1 text-xl font-black text-slate-950">
-                    {group.prizeName}
-                  </h3>
-                  <p className="mt-3 text-3xl font-black text-emerald-700">
-                    {group.winners.join(", ")}
-                  </p>
-                </article>
-              ))
-            )}
-          </div>
+          <DrawReveal results={revealResults} />
         </Card>
 
         <Card>
