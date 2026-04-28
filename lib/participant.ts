@@ -8,6 +8,10 @@ export function createParticipantToken(): string {
   return crypto.randomUUID();
 }
 
+export function normalizeParticipantName(rawName: string): string {
+  return rawName.replace(/\s+/g, " ").trim();
+}
+
 export async function getParticipantToken(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get(PARTICIPANT_COOKIE)?.value ?? null;
@@ -32,4 +36,46 @@ export async function getCurrentParticipant(): Promise<Participant | null> {
   }
 
   return data;
+}
+
+export async function findOrCreateParticipantByName(
+  rawName: string,
+): Promise<Participant> {
+  const name = normalizeParticipantName(rawName);
+
+  if (name.length < 1 || name.length > 30) {
+    throw new Error("Invalid participant name");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { data: existingParticipant, error: findError } = await supabase
+    .from("participants")
+    .select("*")
+    .eq("name", name)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (findError) {
+    throw findError;
+  }
+
+  if (existingParticipant) {
+    return existingParticipant;
+  }
+
+  const { data: insertedParticipant, error: insertError } = await supabase
+    .from("participants")
+    .insert({
+      name,
+      client_token: createParticipantToken(),
+    })
+    .select("*")
+    .single();
+
+  if (insertError) {
+    throw insertError;
+  }
+
+  return insertedParticipant;
 }
