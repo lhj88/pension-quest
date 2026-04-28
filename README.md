@@ -1,6 +1,6 @@
 # Pension Quest
 
-모바일 우선 QR 보물찾기 MVP입니다. 8명 안팎의 펜션 여행 그룹이 QR을 스캔해 점수와 응모권을 모으고, 마지막에 관리자가 응모권 기반 가중 추첨을 실행하는 짧은 이벤트용 앱입니다.
+모바일/공용 기기 우선 QR 보물찾기 MVP입니다. 8명 안팎의 펜션 여행 그룹이 QR을 스캔해 이름을 입력하고, 점수와 응모권을 모은 뒤, 마지막에 관리자가 응모권 기반 가중 추첨을 실행하는 짧은 이벤트용 앱입니다.
 
 ## File tree
 
@@ -8,7 +8,7 @@
 app/
   page.tsx                    # 참가자 이름 등록
   me/page.tsx                 # 내 점수/응모권/획득 현황
-  claim/[code]/page.tsx       # QR claim URL
+  claim/[code]/page.tsx       # QR claim URL, QR마다 이름 입력
   results/page.tsx            # 공개 결과 화면
   admin/page.tsx              # admin 로그인
   admin/actions.ts            # admin server actions
@@ -16,8 +16,8 @@ app/
 components/ui.tsx             # 공통 UI 컴포넌트
 lib/
   supabase/admin.ts           # service role 서버 클라이언트
-  participant.ts              # 참가자 cookie 식별
-  claim.ts                    # idempotent QR claim
+  participant.ts              # 참가자 식별, 이름 정규화, 같은 이름 재사용
+  claim.ts                    # QR claim 처리
   draw.ts                     # weighted draw 순수 로직
   stats.ts                    # 점수/응모권 집계
 supabase/
@@ -123,7 +123,7 @@ npm run dev
 ```text
 http://localhost:3000/                 # 참가자 등록
 http://localhost:3000/me               # 내 현황
-http://localhost:3000/claim/PENSION-001
+http://localhost:3000/claim/PENSION-001 # QR마다 이름 입력 후 획득
 http://localhost:3000/results
 http://localhost:3000/admin
 ```
@@ -149,6 +149,14 @@ npm run qr:urls
 
 `NEXT_PUBLIC_APP_URL`은 실제 배포 URL로 설정해야 인쇄된 QR이 배포 앱을 가리킵니다.
 
+## 참가자 이름 처리
+
+공용 컴퓨터나 공용 태블릿에서 여러 사람이 QR을 찍는 상황을 기준으로, `/claim/[code]`는 쿠키에 저장된 참가자를 바로 쓰지 않고 매번 이름을 입력받습니다.
+
+- 같은 이름을 입력하면 같은 참가자로 보고 기존 점수와 응모권에 합산합니다.
+- 같은 참가자는 같은 QR을 한 번만 획득할 수 있습니다.
+- 이름이 완전히 같은 사람이 여러 명 있으면 구분할 수 없으므로, 운영할 때는 `민수1`, `민수2`처럼 별칭을 정하는 것을 권장합니다.
+
 ## Vercel deploy
 
 1. GitHub 저장소를 Vercel에 연결합니다.
@@ -168,6 +176,6 @@ npm run qr:urls
 1. 관리자가 `/admin/items`에서 QR 항목을 확인하거나 수정합니다.
 2. `/admin/prizes`에서 상품과 수량을 설정합니다.
 3. `/admin/settings`에서 상태를 `진행중`으로 둡니다.
-4. 참가자는 QR URL을 열고 이름을 등록한 뒤 자동으로 claim을 완료합니다.
+4. 참가자는 QR URL을 열고, 그때마다 이름을 입력한 뒤 claim을 완료합니다.
 5. 행사가 끝나면 `/admin/settings`에서 `잠금`으로 바꾸거나 `/admin/draw`에서 바로 추첨을 실행합니다.
 6. `/results`를 휴대폰 또는 TV에 띄워 결과와 리더보드를 보여줍니다.
