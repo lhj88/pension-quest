@@ -10,6 +10,7 @@ app/
   me/page.tsx                 # 내 점수/응모권/획득 현황
   claim/[code]/page.tsx       # QR claim URL, QR마다 이름 입력
   results/page.tsx            # 공개 결과 화면
+  results/draw-reveal.tsx     # 단계별 당첨 공개 UI
   admin/page.tsx              # admin 로그인
   admin/actions.ts            # admin server actions
   admin/(protected)/...       # dashboard/items/prizes/draw/settings/qr
@@ -19,9 +20,11 @@ lib/
   participant.ts              # 참가자 식별, 이름 정규화, 같은 이름 재사용
   claim.ts                    # QR claim 처리
   draw.ts                     # weighted draw 순수 로직
+  prize-order.ts              # 상품 순서 정렬/저장 helper
   stats.ts                    # 점수/응모권 집계
 supabase/
   migrations/0001_initial_schema.sql
+  migrations/0002_add_prize_sort_order.sql
   seed.sql
 scripts/list-qr-urls.ts
 tests/
@@ -45,7 +48,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ## DB schema
 
-`supabase/migrations/0001_initial_schema.sql`를 Supabase SQL Editor에서 먼저 실행한 뒤, `supabase/seed.sql`를 실행합니다.
+새로 설치하는 경우 `supabase/migrations/0001_initial_schema.sql`를 Supabase SQL Editor에서 먼저 실행한 뒤, `supabase/seed.sql`를 실행합니다.
+
+이미 이전 버전 DB를 만들어 둔 경우에는 `supabase/migrations/0002_add_prize_sort_order.sql`를 한 번 실행한 뒤 앱을 배포하세요. 이 migration은 기존 상품에 `sort_order`를 추가하고, 생성일 기준으로 10, 20, 30... 순서를 채웁니다.
 
 주요 테이블:
 
@@ -81,6 +86,7 @@ prizes
   description text
   quantity integer
   is_active boolean
+  sort_order integer
   created_at timestamptz
 
 draw_results
@@ -157,6 +163,16 @@ npm run qr:urls
 - 같은 참가자는 같은 QR을 한 번만 획득할 수 있습니다.
 - 이름이 완전히 같은 사람이 여러 명 있으면 구분할 수 없으므로, 운영할 때는 `민수1`, `민수2`처럼 별칭을 정하는 것을 권장합니다.
 
+## 상품 순서와 결과 공개
+
+관리자는 `/admin/prizes`에서 상품을 만들고, 위/아래 버튼이나 드래그로 추첨 상품 순서를 조정할 수 있습니다. 추첨을 실행하면 이 순서대로 당첨 슬롯이 배정되고 `/results`에서도 같은 순서로 공개됩니다.
+
+`/results`의 당첨 공개 화면은 진행자용입니다.
+
+- `이름 먼저` / `상품 먼저` 공개 모드를 선택할 수 있습니다.
+- `공개 시작` 후 화면을 클릭하거나 Space / Enter를 누르면 두 번째 정보를 공개합니다.
+- 오른쪽 화살표는 다음 당첨, 왼쪽 화살표는 이전 당첨으로 이동합니다.
+
 ## Vercel deploy
 
 1. GitHub 저장소를 Vercel에 연결합니다.
@@ -174,7 +190,7 @@ npm run qr:urls
 ## 운영 흐름
 
 1. 관리자가 `/admin/items`에서 QR 항목을 확인하거나 수정합니다.
-2. `/admin/prizes`에서 상품과 수량을 설정합니다.
+2. `/admin/prizes`에서 상품과 수량, 공개 순서를 설정합니다.
 3. `/admin/settings`에서 상태를 `진행중`으로 둡니다.
 4. 참가자는 QR URL을 열고, 그때마다 이름을 입력한 뒤 claim을 완료합니다.
 5. 행사가 끝나면 `/admin/settings`에서 `잠금`으로 바꾸거나 `/admin/draw`에서 바로 추첨을 실행합니다.
