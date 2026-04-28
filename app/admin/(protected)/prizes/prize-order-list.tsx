@@ -60,16 +60,20 @@ export function PrizeOrderList({ prizes }: PrizeOrderListProps) {
     setDraggingId(id);
   }
 
-  function handleDragOver(event: DragEvent<HTMLDivElement>, overId: string) {
+  function handleDragEnter(event: DragEvent<HTMLDivElement>, overId: string) {
     event.preventDefault();
     const activeId = draggingId ?? event.dataTransfer.getData("text/plain");
 
-    if (!activeId || activeId === overId) {
+    if (!activeId || activeId === overId || dropTargetId === overId) {
       return;
     }
 
     setDropTargetId(overId);
     movePrize(activeId, overId);
+  }
+
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
   }
 
   function handleDragEnd() {
@@ -108,7 +112,8 @@ export function PrizeOrderList({ prizes }: PrizeOrderListProps) {
       {orderedPrizes.map((prize, index) => (
         <div
           key={prize.id}
-          onDragOver={(event) => handleDragOver(event, prize.id)}
+          onDragEnter={(event) => handleDragEnter(event, prize.id)}
+          onDragOver={handleDragOver}
           onDrop={handleDragEnd}
         >
           <Card
