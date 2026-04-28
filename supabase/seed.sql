@@ -25,9 +25,9 @@ set title = excluded.title,
     is_active = excluded.is_active,
     sort_order = excluded.sort_order;
 
-insert into public.prizes (name, description, quantity, is_active)
+insert into public.prizes (name, description, quantity, is_active, sort_order)
 values
-  ('1등 상품', '오늘의 메인 보상입니다.', 1, true),
-  ('2등 상품', '응모권의 힘을 믿어보세요.', 1, true),
-  ('깜짝 상품', '마지막까지 재미를 더하는 보너스 상품입니다.', 1, true)
+  ('1등 상품', '오늘의 메인 보상입니다.', 1, true, 10),
+  ('2등 상품', '응모권의 힘을 믿어보세요.', 1, true, 20),
+  ('깜짝 상품', '마지막까지 재미를 더하는 보너스 상품입니다.', 1, true, 30)
 on conflict do nothing;
