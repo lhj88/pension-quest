@@ -38,6 +38,30 @@ export async function getCurrentParticipant(): Promise<Participant | null> {
   return data;
 }
 
+export async function getParticipantsByNormalizedName(
+  rawName: string,
+): Promise<Participant[]> {
+  const name = normalizeParticipantName(rawName);
+
+  if (name.length < 1 || name.length > 30) {
+    return [];
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { data: participants, error } = await supabase
+    .from("participants")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (participants ?? []).filter(
+    (participant) => normalizeParticipantName(participant.name) === name,
+  );
+}
+
 export async function findOrCreateParticipantByName(
   rawName: string,
 ): Promise<Participant> {
@@ -47,24 +71,14 @@ export async function findOrCreateParticipantByName(
     throw new Error("Invalid participant name");
   }
 
-  const supabase = createSupabaseAdminClient();
-  const { data: participants, error: findError } = await supabase
-    .from("participants")
-    .select("*")
-    .order("created_at", { ascending: true });
-
-  if (findError) {
-    throw findError;
-  }
-
-  const existingParticipant = (participants ?? []).find(
-    (participant) => normalizeParticipantName(participant.name) === name,
-  );
+  const existingParticipants = await getParticipantsByNormalizedName(name);
+  const existingParticipant = existingParticipants[0];
 
   if (existingParticipant) {
     return existingParticipant;
   }
 
+  const supabase = createSupabaseAdminClient();
   const { data: insertedParticipant, error: insertError } = await supabase
     .from("participants")
     .insert({
