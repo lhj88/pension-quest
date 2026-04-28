@@ -1,3 +1,4 @@
+import { normalizeParticipantName } from "@/lib/participant";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { summarizeClaims } from "@/lib/stats";
 import type {
@@ -104,9 +105,48 @@ export async function getParticipants(): Promise<Participant[]> {
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   const participants = await getParticipants();
+  const participantGroups = new Map<
+    string,
+    { displayParticipant: Participant; participants: Participant[] }
+  >();
+
+  for (const participant of participants) {
+    const normalizedName = normalizeParticipantName(participant.name);
+    const existingGroup = participantGroups.get(normalizedName);
+
+    if (!existingGroup) {
+      participantGroups.set(normalizedName, {
+        displayParticipant: participant,
+        participants: [participant],
+      });
+      continue;
+    }
+
+    existingGroup.participants.push(participant);
+
+    if (
+      participant.created_at < existingGroup.displayParticipant.created_at
+    ) {
+      existingGroup.displayParticipant = participant;
+    }
+  }
+
   const entries = await Promise.all(
-    participants.map(async (participant) => {
-      const claims = await getParticipantClaims(participant.id);
+    Array.from(participantGroups.values()).map(async (group) => {
+      const claimsByParticipant = await Promise.all(
+        group.participants.map((participant) =>
+          getParticipantClaims(participant.id),
+        ),
+      );
+      const claimsByItemId = new Map<string, ClaimWithItem>();
+
+      for (const claim of claimsByParticipant.flat()) {
+        if (!claimsByItemId.has(claim.hunt_item.id)) {
+          claimsByItemId.set(claim.hunt_item.id, claim);
+        }
+      }
+
+      const claims = Array.from(claimsByItemId.values());
       const summary = summarizeClaims(
         claims.map((claim) => ({
           points: claim.hunt_item.points,
@@ -116,7 +156,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
       );
 
       return {
-        participant,
+        participant: group.displayParticipant,
         score: summary.score,
         tickets: summary.tickets,
         claimCount: summary.claimCount,
