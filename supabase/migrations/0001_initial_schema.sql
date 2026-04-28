@@ -34,6 +34,7 @@ create table if not exists public.prizes (
   description text not null default '',
   quantity integer not null default 1 check (quantity >= 1),
   is_active boolean not null default true,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -71,6 +72,7 @@ execute function public.set_updated_at();
 create index if not exists claims_participant_id_idx on public.claims(participant_id);
 create index if not exists claims_hunt_item_id_idx on public.claims(hunt_item_id);
 create index if not exists hunt_items_active_sort_idx on public.hunt_items(is_active, sort_order);
+create index if not exists prizes_active_sort_idx on public.prizes(is_active, sort_order);
 create index if not exists draw_results_prize_id_idx on public.draw_results(prize_id);
 create index if not exists draw_results_participant_id_idx on public.draw_results(participant_id);
 
