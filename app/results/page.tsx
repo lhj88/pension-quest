@@ -62,13 +62,13 @@ export default async function ResultsPage() {
         <Card>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-2xl font-black text-slate-950">리더보드</h2>
-            <SecondaryLink href="/me">내 현황</SecondaryLink>
+            <SecondaryLink href="/">처음 화면</SecondaryLink>
           </div>
           <div className="mt-4 grid gap-2">
             {leaderboard.length === 0 ? (
               <EmptyState
                 title="참가자가 아직 없어요"
-                description="첫 참가자가 이름을 등록하면 순위가 생깁니다."
+                description="QR을 열고 이름을 입력하면 순위가 생깁니다."
               />
             ) : (
               leaderboard.map((entry, index) => (
