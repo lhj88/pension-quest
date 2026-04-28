@@ -38,13 +38,21 @@ export default async function AdminDashboardPage() {
         <StatCard label="상품" value={`${prizes.length}개`} />
       </section>
 
+      <Card className="border-emerald-200 bg-emerald-50">
+        <p className="font-bold text-emerald-900">공용 기기 운영 모드</p>
+        <p className="mt-1 text-sm leading-6 text-emerald-800">
+          QR을 열 때마다 참가자 이름을 다시 입력합니다. 같은 이름을 입력하면 같은 참가자로 보고
+          점수와 응모권을 합산합니다.
+        </p>
+      </Card>
+
       <Card>
         <h2 className="text-xl font-black text-slate-950">참가자 현황</h2>
         <div className="mt-4 grid gap-2">
           {leaderboard.length === 0 ? (
             <EmptyState
               title="참가자가 아직 없습니다"
-              description="랜딩 페이지에서 이름을 등록하면 이곳에 표시됩니다."
+              description="QR을 열고 이름을 입력하면 이곳에 표시됩니다."
             />
           ) : (
             leaderboard.map((entry) => (
