@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-auth";
 import { getActivePrizes, getLeaderboard } from "@/lib/data";
 import { selectWeightedWinners } from "@/lib/draw";
+import { createPrizeSortOrderUpdates } from "@/lib/prize-order";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { GameStatus, HuntItemType } from "@/types/domain";
 
@@ -24,6 +25,17 @@ function numberField(formData: FormData, name: string, fallback = 0): number {
 
 function checkboxField(formData: FormData, name: string): boolean {
   return formData.get(name) === "on";
+}
+
+function jsonStringArrayField(formData: FormData, name: string): string[] {
+  try {
+    const parsed = JSON.parse(textField(formData, name));
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === "string")
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 function parseItemType(value: string): HuntItemType {
@@ -102,6 +114,7 @@ export async function savePrize(formData: FormData) {
     description: textField(formData, "description"),
     quantity: Math.max(1, numberField(formData, "quantity", 1)),
     is_active: checkboxField(formData, "is_active"),
+    sort_order: Math.max(0, numberField(formData, "sort_order", 0)),
   };
 
   const supabase = createSupabaseAdminClient();
@@ -114,8 +127,43 @@ export async function savePrize(formData: FormData) {
     throw error;
   }
 
+  revalidatePath("/admin/dashboard");
   revalidatePath("/admin/prizes");
   revalidatePath("/admin/draw");
+  revalidatePath("/results");
+  redirect("/admin/prizes");
+}
+
+export async function reorderPrizes(formData: FormData) {
+  await requireAdmin();
+
+  const updates = createPrizeSortOrderUpdates(
+    jsonStringArrayField(formData, "ordered_ids"),
+  );
+
+  if (updates.length === 0) {
+    redirect("/admin/prizes");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const results = await Promise.all(
+    updates.map((update) =>
+      supabase
+        .from("prizes")
+        .update({ sort_order: update.sort_order })
+        .eq("id", update.id),
+    ),
+  );
+  const error = results.find((result) => result.error)?.error;
+
+  if (error) {
+    throw error;
+  }
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/prizes");
+  revalidatePath("/admin/draw");
+  revalidatePath("/results");
   redirect("/admin/prizes");
 }
 
