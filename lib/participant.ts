@@ -48,17 +48,18 @@ export async function findOrCreateParticipantByName(
   }
 
   const supabase = createSupabaseAdminClient();
-  const { data: existingParticipant, error: findError } = await supabase
+  const { data: participants, error: findError } = await supabase
     .from("participants")
     .select("*")
-    .eq("name", name)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: true });
 
   if (findError) {
     throw findError;
   }
+
+  const existingParticipant = (participants ?? []).find(
+    (participant) => normalizeParticipantName(participant.name) === name,
+  );
 
   if (existingParticipant) {
     return existingParticipant;
