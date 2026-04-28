@@ -26,8 +26,8 @@ export default async function Home({ searchParams }: HomePageProps) {
             QR을 찾아 점수와 응모권을 모아보세요
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50 sm:text-lg">
-            펜션 곳곳에 숨겨진 QR을 휴대폰 카메라로 스캔하면 바로 보물을
-            획득할 수 있어요. 이름은 한 번만 입력하면 이 브라우저가 기억합니다.
+            펜션 곳곳에 숨겨진 QR을 열면 이름을 입력하고 바로 보물을 획득할 수 있어요.
+            공용 기기에서도 QR을 찍을 때마다 이름을 다시 받도록 만들었습니다.
           </p>
         </section>
 
@@ -41,14 +41,14 @@ export default async function Home({ searchParams }: HomePageProps) {
           {participant ? (
             <div className="grid gap-3">
               <p className="text-sm font-semibold text-slate-500">
-                현재 참가자
+                이 기기에 저장된 참가자
               </p>
               <p className="text-2xl font-black text-slate-950">
                 {participant.name}
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <SecondaryLink href="/me">내 현황 보기</SecondaryLink>
-                <SecondaryLink href={returnTo}>스캔하던 곳으로 이동</SecondaryLink>
+                <SecondaryLink href={returnTo}>이동하기</SecondaryLink>
               </div>
             </div>
           ) : null}
