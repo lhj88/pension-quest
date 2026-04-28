@@ -59,6 +59,15 @@ function parseGameStatus(value: string): GameStatus {
   return "open";
 }
 
+function revalidateAdminAndPublicPages() {
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/prizes");
+  revalidatePath("/admin/draw");
+  revalidatePath("/admin/settings");
+  revalidatePath("/me");
+  revalidatePath("/results");
+}
+
 export async function loginAdmin(formData: FormData) {
   const password = textField(formData, "password");
 
@@ -127,10 +136,7 @@ export async function savePrize(formData: FormData) {
     throw error;
   }
 
-  revalidatePath("/admin/dashboard");
-  revalidatePath("/admin/prizes");
-  revalidatePath("/admin/draw");
-  revalidatePath("/results");
+  revalidateAdminAndPublicPages();
   redirect("/admin/prizes");
 }
 
@@ -160,10 +166,7 @@ export async function reorderPrizes(formData: FormData) {
     throw error;
   }
 
-  revalidatePath("/admin/dashboard");
-  revalidatePath("/admin/prizes");
-  revalidatePath("/admin/draw");
-  revalidatePath("/results");
+  revalidateAdminAndPublicPages();
   redirect("/admin/prizes");
 }
 
@@ -186,10 +189,58 @@ export async function updateSettings(formData: FormData) {
     throw error;
   }
 
-  revalidatePath("/admin/settings");
-  revalidatePath("/admin/dashboard");
-  revalidatePath("/results");
+  revalidateAdminAndPublicPages();
   redirect("/admin/settings");
+}
+
+export async function resetParticipants(formData: FormData) {
+  await requireAdmin();
+
+  const confirmation = textField(formData, "confirmation");
+
+  if (confirmation !== "초기화") {
+    redirect("/admin/settings?reset=confirm");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { error: drawResultsError } = await supabase
+    .from("draw_results")
+    .delete()
+    .not("id", "is", null);
+
+  if (drawResultsError) {
+    throw drawResultsError;
+  }
+
+  const { error: claimsError } = await supabase
+    .from("claims")
+    .delete()
+    .not("id", "is", null);
+
+  if (claimsError) {
+    throw claimsError;
+  }
+
+  const { error: participantsError } = await supabase
+    .from("participants")
+    .delete()
+    .not("id", "is", null);
+
+  if (participantsError) {
+    throw participantsError;
+  }
+
+  const { error: configError } = await supabase
+    .from("app_config")
+    .update({ game_status: "open" })
+    .eq("id", 1);
+
+  if (configError) {
+    throw configError;
+  }
+
+  revalidateAdminAndPublicPages();
+  redirect("/admin/settings?reset=done");
 }
 
 export async function runDraw(formData: FormData) {
@@ -270,9 +321,7 @@ export async function runDraw(formData: FormData) {
     throw configError;
   }
 
-  revalidatePath("/admin/draw");
-  revalidatePath("/admin/dashboard");
-  revalidatePath("/results");
+  revalidateAdminAndPublicPages();
   redirect("/admin/draw");
 }
 
