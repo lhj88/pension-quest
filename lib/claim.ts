@@ -1,5 +1,8 @@
-import { getAppConfig } from "@/lib/data";
-import { findOrCreateParticipantByName } from "@/lib/participant";
+import { getAppConfig, getParticipantClaims } from "@/lib/data";
+import {
+  findOrCreateParticipantByName,
+  getParticipantsByNormalizedName,
+} from "@/lib/participant";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Claim, HuntItem, Participant } from "@/types/domain";
 
@@ -40,7 +43,18 @@ export async function claimHuntItemByName(
     return itemResult;
   }
 
-  const participant = await findOrCreateParticipantByName(rawName);
+  const existingParticipants = await getParticipantsByNormalizedName(rawName);
+  const participant =
+    existingParticipants[0] ?? (await findOrCreateParticipantByName(rawName));
+  const hasExistingClaim = await hasAnyParticipantClaimedItem(
+    existingParticipants.length > 0 ? existingParticipants : [participant],
+    itemResult.item.id,
+  );
+
+  if (hasExistingClaim) {
+    return { status: "duplicate", item: itemResult.item, participant };
+  }
+
   const claimResult = await insertClaim(participant.id, itemResult.item);
 
   if (claimResult.status === "success") {
@@ -90,6 +104,19 @@ async function getClaimableHuntItem(
   }
 
   return { status: "ok", item };
+}
+
+async function hasAnyParticipantClaimedItem(
+  participants: Participant[],
+  huntItemId: string,
+): Promise<boolean> {
+  const claimsByParticipant = await Promise.all(
+    participants.map((participant) => getParticipantClaims(participant.id)),
+  );
+
+  return claimsByParticipant
+    .flat()
+    .some((claim) => claim.hunt_item.id === huntItemId);
 }
 
 async function insertClaim(
