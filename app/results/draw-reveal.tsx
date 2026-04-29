@@ -177,10 +177,11 @@ export function DrawReveal({ results }: DrawRevealProps) {
             : "당첨 공개 화면"
         }
         className={cx(
-          "overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50",
+          "reveal-stage overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50",
           canRevealSecondPart &&
             "cursor-pointer transition hover:border-amber-300",
         )}
+        data-celebrate={isSecondPartVisible ? "true" : "false"}
         onClick={revealSecondPart}
         onKeyDown={handleRevealKeyDown}
         role={canRevealSecondPart ? "button" : undefined}
@@ -327,7 +328,8 @@ function RevealPanel({
       </p>
       <p
         className={cx(
-          "mt-2 break-keep text-4xl font-black leading-tight sm:text-6xl",
+          "reveal-title mt-2 break-keep text-4xl font-black leading-tight sm:text-6xl",
+          isVisible && "reveal-title-pop",
           tone === "emerald" ? "text-emerald-700" : "text-slate-950",
         )}
       >
