@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-auth";
 import { getActivePrizes, getLeaderboard } from "@/lib/data";
 import { selectWeightedWinners } from "@/lib/draw";
+import { createHuntItemSortOrderUpdates } from "@/lib/hunt-item-order";
 import { createPrizeSortOrderUpdates } from "@/lib/prize-order";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { GameStatus, HuntItemType } from "@/types/domain";
@@ -68,6 +69,12 @@ function revalidateAdminAndPublicPages() {
   revalidatePath("/results");
 }
 
+function revalidateHuntItemPages() {
+  revalidatePath("/admin/items");
+  revalidatePath("/admin/qr");
+  revalidateAdminAndPublicPages();
+}
+
 export async function loginAdmin(formData: FormData) {
   const password = textField(formData, "password");
 
@@ -109,8 +116,57 @@ export async function saveHuntItem(formData: FormData) {
     throw error;
   }
 
-  revalidatePath("/admin/items");
-  revalidatePath("/me");
+  revalidateHuntItemPages();
+  redirect("/admin/items");
+}
+
+export async function deleteHuntItem(formData: FormData) {
+  await requireAdmin();
+
+  const id = textField(formData, "id");
+
+  if (!id) {
+    redirect("/admin/items");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase.from("hunt_items").delete().eq("id", id);
+
+  if (error) {
+    throw error;
+  }
+
+  revalidateHuntItemPages();
+  redirect("/admin/items");
+}
+
+export async function reorderHuntItems(formData: FormData) {
+  await requireAdmin();
+
+  const updates = createHuntItemSortOrderUpdates(
+    jsonStringArrayField(formData, "ordered_ids"),
+  );
+
+  if (updates.length === 0) {
+    redirect("/admin/items");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const results = await Promise.all(
+    updates.map((update) =>
+      supabase
+        .from("hunt_items")
+        .update({ sort_order: update.sort_order })
+        .eq("id", update.id),
+    ),
+  );
+  const error = results.find((result) => result.error)?.error;
+
+  if (error) {
+    throw error;
+  }
+
+  revalidateHuntItemPages();
   redirect("/admin/items");
 }
 
