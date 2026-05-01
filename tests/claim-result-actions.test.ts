@@ -16,7 +16,8 @@ describe("claim result actions", () => {
 
     expect(source).toContain("use client");
     expect(source).toContain("window.close()");
-    expect(source).toContain("window.history.back()");
+    expect(source).toContain("window.location.assign(\"/\")");
+    expect(source).not.toContain("window.history.back()");
     expect(source).toContain("닫기");
   });
 });

@@ -8,8 +8,8 @@ export function CloseClaimButton() {
         window.close();
 
         window.setTimeout(() => {
-          if (!window.closed && window.history.length > 1) {
-            window.history.back();
+          if (!window.closed) {
+            window.location.assign("/");
           }
         }, 120);
       }}
