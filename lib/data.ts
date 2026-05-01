@@ -1,5 +1,10 @@
 import { normalizeParticipantName } from "@/lib/participant";
 import { sortPrizesForDraw } from "@/lib/prize-order";
+import {
+  buildSpecialClaimGroups,
+  type SpecialClaimGroup,
+  type SpecialClaimSource,
+} from "@/lib/special-claims";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { summarizeClaims } from "@/lib/stats";
 import type {
@@ -88,6 +93,22 @@ export async function getParticipantClaims(
   }
 
   return (data ?? []) as unknown as ClaimWithItem[];
+}
+
+export async function getSpecialClaimGroups(): Promise<SpecialClaimGroup[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("claims")
+    .select(
+      "id, created_at, participant:participants(id, name), hunt_item:hunt_items(id, title, description, type, tickets)",
+    )
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return buildSpecialClaimGroups((data ?? []) as unknown as SpecialClaimSource[]);
 }
 
 export async function getParticipants(): Promise<Participant[]> {

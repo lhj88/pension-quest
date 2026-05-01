@@ -5,7 +5,7 @@ export function itemTypeLabel(type: HuntItemType): string {
     normal: "일반",
     bonus: "보너스",
     blank: "꽝",
-    mission: "미션",
+    mission: "장난",
   };
 
   return labels[type];
