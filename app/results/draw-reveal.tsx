@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cx, EmptyState } from "@/components/ui";
 
@@ -8,6 +8,7 @@ import {
   getRevealNavigationIntent,
   shouldRevealSecondPartForKey,
 } from "./reveal-flow";
+import { requestRevealLayerFullscreen } from "./reveal-fullscreen";
 import type { DrawRevealSlide, SpecialRevealSlide } from "./reveal-items";
 
 type RevealMode = "name-first" | "prize-first";
@@ -22,6 +23,7 @@ const revealModes: Array<{ label: string; value: RevealMode }> = [
 ];
 
 export function DrawReveal({ slides }: DrawRevealProps) {
+  const revealLayerRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<RevealMode>("name-first");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
@@ -140,6 +142,12 @@ export function DrawReveal({ slides }: DrawRevealProps) {
     setCurrentIndex((index) => Math.min(slides.length - 1, index + 1));
   }
 
+  function startReveal() {
+    void requestRevealLayerFullscreen(revealLayerRef.current);
+    setIsSecondPartVisible(false);
+    setHasStarted(true);
+  }
+
   if (slides.length === 0) {
     return (
       <EmptyState
@@ -150,7 +158,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
   }
 
   return (
-    <div className="grid gap-5">
+    <div className="draw-reveal-layer grid gap-5 bg-white" ref={revealLayerRef}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-black text-slate-950">결과 공개</h2>
@@ -186,7 +194,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
             : "결과 공개 화면"
         }
         className={cx(
-          "reveal-stage overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50",
+          "draw-reveal-stage reveal-stage overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50",
           canRevealSecondPart &&
             "cursor-pointer transition hover:border-amber-300",
         )}
@@ -204,7 +212,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
               : "공개 대기"}
           </p>
         </div>
-        <div className="grid min-h-80 content-center gap-4 p-5 text-center sm:p-8">
+        <div className="draw-reveal-content grid min-h-80 content-center gap-4 p-5 text-center sm:p-8">
           {hasStarted && currentSlide ? (
             currentSlide.kind === "prize" ? (
               <>
@@ -270,14 +278,11 @@ export function DrawReveal({ slides }: DrawRevealProps) {
         </div>
       </section>
 
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+      <div className="draw-reveal-controls grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
         <button
           className="min-h-12 rounded-[8px] bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:bg-slate-300"
           disabled={hasStarted}
-          onClick={() => {
-            setIsSecondPartVisible(false);
-            setHasStarted(true);
-          }}
+          onClick={startReveal}
           type="button"
         >
           공개 시작

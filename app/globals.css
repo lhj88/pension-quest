@@ -57,6 +57,62 @@ body {
   transform-origin: center;
 }
 
+.draw-reveal-layer:fullscreen,
+.draw-reveal-layer:-webkit-full-screen {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding: 1.25rem;
+  width: 100vw;
+}
+
+.draw-reveal-layer:fullscreen .draw-reveal-stage,
+.draw-reveal-layer:-webkit-full-screen .draw-reveal-stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.draw-reveal-layer:fullscreen .draw-reveal-content,
+.draw-reveal-layer:-webkit-full-screen .draw-reveal-content {
+  align-content: center;
+  min-height: 0;
+  padding: 1.5rem;
+}
+
+.draw-reveal-layer:fullscreen .draw-reveal-controls,
+.draw-reveal-layer:-webkit-full-screen .draw-reveal-controls {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.draw-reveal-layer:fullscreen .draw-reveal-controls button,
+.draw-reveal-layer:-webkit-full-screen .draw-reveal-controls button {
+  min-width: 5.5rem;
+}
+
+.draw-reveal-layer:fullscreen .draw-reveal-controls button:first-child:disabled,
+.draw-reveal-layer:-webkit-full-screen
+  .draw-reveal-controls
+  button:first-child:disabled {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .draw-reveal-layer:fullscreen,
+  .draw-reveal-layer:-webkit-full-screen {
+    padding: 1.5rem;
+  }
+
+  .draw-reveal-layer:fullscreen .draw-reveal-content,
+  .draw-reveal-layer:-webkit-full-screen .draw-reveal-content {
+    padding: 2rem;
+  }
+}
+
 @keyframes claim-card-enter {
   from {
     opacity: 0;
