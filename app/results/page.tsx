@@ -16,6 +16,7 @@ import {
 import type { SpecialClaimGroup } from "@/lib/special-claims";
 
 import { DrawReveal } from "./draw-reveal";
+import { buildDrawRevealSlides } from "./reveal-items";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +31,7 @@ export default async function ResultsPage() {
     (sum, group) => sum + group.claims.length,
     0,
   );
-  const revealResults = results.map((result) => ({
-    id: result.id,
-    participantName: result.participant.name,
-    prizeName: result.prize.name,
-    prizeDescription: result.prize.description,
-    position: result.position,
-  }));
+  const revealSlides = buildDrawRevealSlides(results, specialClaimGroups);
 
   return (
     <PageShell>
@@ -50,7 +45,7 @@ export default async function ResultsPage() {
             오늘의 보물찾기 결과
           </h1>
           <p className="mt-3 max-w-2xl text-slate-200">
-            진행자가 선택한 순서로 당첨 결과를 한 명씩 공개하세요.
+            당첨, 보너스 QR, 꽝 QR 결과를 진행자가 원하는 속도로 공개하세요.
           </p>
         </header>
 
@@ -61,11 +56,11 @@ export default async function ResultsPage() {
             value={`${leaderboard.reduce((sum, entry) => sum + entry.tickets, 0)}장`}
           />
           <StatCard label="특별 QR" value={`${specialClaimCount}개`} />
-          <StatCard label="당첨 기록" value={`${results.length}개`} />
+          <StatCard label="공개 화면" value={`${revealSlides.length}개`} />
         </section>
 
         <Card>
-          <DrawReveal results={revealResults} />
+          <DrawReveal slides={revealSlides} />
         </Card>
 
         <SpecialClaimGroups groups={specialClaimGroups} />
@@ -120,7 +115,7 @@ function SpecialClaimGroups({ groups }: { groups: SpecialClaimGroup[] }) {
         <div>
           <h2 className="text-2xl font-black text-slate-950">특별 QR 기록</h2>
           <p className="mt-1 text-sm text-slate-500">
-            보너스, 꽝, 장난 QR을 누가 찾았는지 추첨 화면에서 같이 보여줍니다.
+            보너스와 꽝 QR 기록은 공개 화면에도 함께 나옵니다.
           </p>
         </div>
       </div>

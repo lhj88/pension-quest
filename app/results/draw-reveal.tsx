@@ -8,19 +8,12 @@ import {
   getRevealNavigationIntent,
   shouldRevealSecondPartForKey,
 } from "./reveal-flow";
+import type { DrawRevealSlide, SpecialRevealSlide } from "./reveal-items";
 
 type RevealMode = "name-first" | "prize-first";
 
-export type DrawRevealResult = {
-  id: string;
-  participantName: string;
-  prizeName: string;
-  prizeDescription: string;
-  position: number;
-};
-
 type DrawRevealProps = {
-  results: DrawRevealResult[];
+  slides: DrawRevealSlide[];
 };
 
 const revealModes: Array<{ label: string; value: RevealMode }> = [
@@ -28,22 +21,26 @@ const revealModes: Array<{ label: string; value: RevealMode }> = [
   { label: "상품 먼저", value: "prize-first" },
 ];
 
-export function DrawReveal({ results }: DrawRevealProps) {
+export function DrawReveal({ slides }: DrawRevealProps) {
   const [mode, setMode] = useState<RevealMode>("name-first");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [isSecondPartVisible, setIsSecondPartVisible] = useState(false);
 
-  const currentResult = results[currentIndex];
+  const currentSlide = slides[currentIndex];
+  const hasPrizeSlides = slides.some((slide) => slide.kind === "prize");
+  const isPrizeSlide = currentSlide?.kind === "prize";
+  const isCurrentSlideComplete =
+    hasStarted &&
+    Boolean(currentSlide) &&
+    (!isPrizeSlide || isSecondPartVisible);
   const canRevealSecondPart =
-    hasStarted && !isSecondPartVisible && results.length > 0;
+    hasStarted && Boolean(currentSlide) && isPrizeSlide && !isSecondPartVisible;
   const canShowPreviousResult = hasStarted && currentIndex > 0;
   const canShowNextResult =
-    hasStarted &&
-    isSecondPartVisible &&
-    currentIndex < results.length - 1;
+    isCurrentSlideComplete && currentIndex < slides.length - 1;
   const isComplete =
-    hasStarted && results.length > 0 && currentIndex === results.length - 1;
+    isCurrentSlideComplete && currentIndex === slides.length - 1;
 
   useEffect(() => {
     if (!canRevealSecondPart) {
@@ -83,12 +80,12 @@ export function DrawReveal({ results }: DrawRevealProps) {
 
       if (
         intent === "next" &&
-        isSecondPartVisible &&
-        currentIndex < results.length - 1
+        isCurrentSlideComplete &&
+        currentIndex < slides.length - 1
       ) {
         event.preventDefault();
         setIsSecondPartVisible(false);
-        setCurrentIndex((index) => Math.min(results.length - 1, index + 1));
+        setCurrentIndex((index) => Math.min(slides.length - 1, index + 1));
       }
     }
 
@@ -97,7 +94,13 @@ export function DrawReveal({ results }: DrawRevealProps) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [currentIndex, hasStarted, isSecondPartVisible, results.length]);
+  }, [
+    currentIndex,
+    hasStarted,
+    isCurrentSlideComplete,
+    isSecondPartVisible,
+    slides.length,
+  ]);
 
   function revealSecondPart() {
     if (!canRevealSecondPart) {
@@ -129,15 +132,19 @@ export function DrawReveal({ results }: DrawRevealProps) {
   }
 
   function showNextResult() {
+    if (!canShowNextResult) {
+      return;
+    }
+
     setIsSecondPartVisible(false);
-    setCurrentIndex((index) => Math.min(results.length - 1, index + 1));
+    setCurrentIndex((index) => Math.min(slides.length - 1, index + 1));
   }
 
-  if (results.length === 0) {
+  if (slides.length === 0) {
     return (
       <EmptyState
-        title="아직 추첨 결과가 없어요"
-        description="관리자가 추첨을 실행하면 이곳에 당첨자가 표시됩니다."
+        title="아직 공개할 결과가 없어요"
+        description="추첨 결과나 보너스/꽝 QR 기록이 생기면 이곳에 표시됩니다."
       />
     );
   }
@@ -146,42 +153,45 @@ export function DrawReveal({ results }: DrawRevealProps) {
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black text-slate-950">당첨 공개</h2>
+          <h2 className="text-2xl font-black text-slate-950">결과 공개</h2>
           <p className="mt-1 text-sm text-slate-600">
-            현재 공개 {hasStarted ? currentIndex + 1 : 0} / {results.length}
+            현재 공개 {hasStarted ? currentIndex + 1 : 0} / {slides.length}
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-2 rounded-[8px] border border-slate-200 bg-slate-50 p-1">
-          {revealModes.map((revealMode) => (
-            <button
-              className={cx(
-                "min-h-10 rounded-[6px] px-3 py-2 text-sm font-black transition focus:outline-none focus:ring-4 focus:ring-emerald-100",
-                mode === revealMode.value
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-700 hover:bg-white",
-              )}
-              key={revealMode.value}
-              onClick={() => resetReveal(revealMode.value)}
-              type="button"
-            >
-              {revealMode.label}
-            </button>
-          ))}
-        </div>
+        {hasPrizeSlides ? (
+          <div className="grid grid-cols-2 gap-2 rounded-[8px] border border-slate-200 bg-slate-50 p-1">
+            {revealModes.map((revealMode) => (
+              <button
+                className={cx(
+                  "min-h-10 rounded-[6px] px-3 py-2 text-sm font-black transition focus:outline-none focus:ring-4 focus:ring-emerald-100",
+                  mode === revealMode.value
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-slate-700 hover:bg-white",
+                )}
+                key={revealMode.value}
+                onClick={() => resetReveal(revealMode.value)}
+                type="button"
+              >
+                {revealMode.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <section
         aria-label={
           canRevealSecondPart
             ? "다음 공개 정보를 보여주기"
-            : "당첨 공개 화면"
+            : "결과 공개 화면"
         }
         className={cx(
           "reveal-stage overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50",
           canRevealSecondPart &&
             "cursor-pointer transition hover:border-amber-300",
         )}
-        data-celebrate={isSecondPartVisible ? "true" : "false"}
+        data-celebrate={isCurrentSlideComplete ? "true" : "false"}
+        key={hasStarted && currentSlide ? currentSlide.id : "waiting"}
         onClick={revealSecondPart}
         onKeyDown={handleRevealKeyDown}
         role={canRevealSecondPart ? "button" : undefined}
@@ -189,60 +199,71 @@ export function DrawReveal({ results }: DrawRevealProps) {
       >
         <div className="border-b border-amber-200 bg-white/70 px-4 py-3">
           <p className="text-sm font-black text-amber-900">
-            {hasStarted ? `${currentIndex + 1}번째 당첨` : "공개 대기"}
+            {hasStarted && currentSlide
+              ? getSlideStageLabel(currentSlide, currentIndex)
+              : "공개 대기"}
           </p>
         </div>
         <div className="grid min-h-80 content-center gap-4 p-5 text-center sm:p-8">
-          {hasStarted && currentResult ? (
-            <>
-              <RevealPanel
-                description={
-                  mode === "prize-first"
-                    ? currentResult.prizeDescription
-                    : undefined
-                }
-                eyebrow={mode === "name-first" ? "당첨자" : "당첨 상품"}
-                isVisible
-                key={`primary-${currentResult.id}-${mode}`}
-                title={
-                  mode === "name-first"
-                    ? currentResult.participantName
-                    : currentResult.prizeName
-                }
-                tone={mode === "name-first" ? "emerald" : "slate"}
-              />
-              <RevealPanel
-                description={
-                  mode === "name-first"
-                    ? currentResult.prizeDescription
-                    : undefined
-                }
-                eyebrow={mode === "name-first" ? "당첨 상품" : "당첨자"}
-                isVisible={isSecondPartVisible}
-                key={`secondary-${currentResult.id}-${mode}`}
-                title={
-                  mode === "name-first"
-                    ? currentResult.prizeName
-                    : currentResult.participantName
-                }
-                tone={mode === "name-first" ? "slate" : "emerald"}
-              />
-              {!isSecondPartVisible ? (
-                <p className="text-sm font-bold text-amber-800">
-                  클릭하거나 Space / Enter로 다음 정보를 공개하세요.
-                </p>
-              ) : null}
-            </>
+          {hasStarted && currentSlide ? (
+            currentSlide.kind === "prize" ? (
+              <>
+                <RevealPanel
+                  description={
+                    mode === "prize-first"
+                      ? currentSlide.prizeDescription
+                      : undefined
+                  }
+                  eyebrow={mode === "name-first" ? "당첨자" : "당첨 상품"}
+                  isVisible
+                  key={`primary-${currentSlide.id}-${mode}`}
+                  title={
+                    mode === "name-first"
+                      ? currentSlide.participantName
+                      : currentSlide.prizeName
+                  }
+                  tone={mode === "name-first" ? "emerald" : "slate"}
+                />
+                <RevealPanel
+                  description={
+                    mode === "name-first"
+                      ? currentSlide.prizeDescription
+                      : undefined
+                  }
+                  eyebrow={mode === "name-first" ? "당첨 상품" : "당첨자"}
+                  isVisible={isSecondPartVisible}
+                  key={`secondary-${currentSlide.id}-${mode}`}
+                  title={
+                    mode === "name-first"
+                      ? currentSlide.prizeName
+                      : currentSlide.participantName
+                  }
+                  tone={mode === "name-first" ? "slate" : "emerald"}
+                />
+                {!isSecondPartVisible ? (
+                  <p className="text-sm font-bold text-amber-800">
+                    클릭하거나 Space / Enter로 다음 정보를 공개하세요.
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <SpecialGroupPanel slide={currentSlide} />
+            )
           ) : (
             <div className="mx-auto max-w-xl">
               <p className="text-sm font-black text-amber-800">
-                {mode === "name-first" ? "이름 먼저 공개" : "상품 먼저 공개"}
+                {hasPrizeSlides
+                  ? mode === "name-first"
+                    ? "이름 먼저 공개"
+                    : "상품 먼저 공개"
+                  : "특별 QR 공개"}
               </p>
               <p className="mt-3 text-4xl font-black text-slate-950 sm:text-6xl">
-                당첨 공개 준비
+                결과 공개 준비
               </p>
               <p className="mt-4 text-sm text-slate-600">
-                시작 버튼을 누르면 첫 번째 당첨 결과부터 한 명씩 공개됩니다.
+                시작 버튼을 누르면 상품 당첨, 보너스 QR, 꽝 QR 화면이
+                차례대로 공개됩니다.
               </p>
             </div>
           )}
@@ -286,11 +307,87 @@ export function DrawReveal({ results }: DrawRevealProps) {
         </button>
       </div>
 
-      {isComplete && isSecondPartVisible ? (
+      {isComplete ? (
         <p className="rounded-[8px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-800">
-          모든 당첨 결과를 공개했습니다.
+          모든 결과를 공개했습니다.
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function getSlideStageLabel(slide: DrawRevealSlide, index: number): string {
+  if (slide.kind === "prize") {
+    return `${index + 1}번째 당첨`;
+  }
+
+  return slide.eyebrow;
+}
+
+function SpecialGroupPanel({ slide }: { slide: SpecialRevealSlide }) {
+  const isBonus = slide.type === "bonus";
+
+  return (
+    <div className="mx-auto grid w-full max-w-3xl gap-4">
+      <div
+        className={cx(
+          "rounded-[8px] border bg-white p-5 shadow-sm sm:p-6",
+          isBonus ? "border-amber-200" : "border-slate-200",
+        )}
+      >
+        <p
+          className={cx(
+            "text-sm font-black",
+            isBonus ? "text-amber-800" : "text-slate-600",
+          )}
+        >
+          {slide.eyebrow}
+        </p>
+        <p
+          className={cx(
+            "reveal-title reveal-title-pop mt-2 break-keep text-4xl font-black leading-tight sm:text-6xl",
+            isBonus ? "text-amber-700" : "text-slate-950",
+          )}
+        >
+          {slide.title}
+        </p>
+        <p className="mt-3 break-keep text-sm font-bold text-slate-500">
+          {slide.description}
+        </p>
+      </div>
+
+      <div className="grid max-h-[min(42vh,24rem)] gap-2 overflow-y-auto pr-1 text-left">
+        {slide.claims.map((claim) => (
+          <div
+            className="grid gap-2 rounded-[8px] border border-slate-200 bg-white p-3 sm:grid-cols-[1fr_auto] sm:items-center"
+            key={claim.id}
+          >
+            <div>
+              <p className="font-black text-slate-950">
+                {claim.participantName}
+              </p>
+              <p className="text-sm font-bold text-slate-700">
+                {claim.itemTitle}
+              </p>
+              {claim.itemDescription ? (
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {claim.itemDescription}
+                </p>
+              ) : null}
+            </div>
+            <p
+              className={cx(
+                "text-sm font-black sm:text-right",
+                isBonus ? "text-amber-700" : "text-slate-600",
+              )}
+            >
+              {isBonus && claim.tickets > 0
+                ? `응모권 +${claim.tickets}장`
+                : "응모권 없음"}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
