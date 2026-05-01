@@ -196,6 +196,26 @@ export async function savePrize(formData: FormData) {
   redirect("/admin/prizes");
 }
 
+export async function deletePrize(formData: FormData) {
+  await requireAdmin();
+
+  const id = textField(formData, "id");
+
+  if (!id) {
+    redirect("/admin/prizes");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase.from("prizes").delete().eq("id", id);
+
+  if (error) {
+    throw error;
+  }
+
+  revalidateAdminAndPublicPages();
+  redirect("/admin/prizes");
+}
+
 export async function reorderPrizes(formData: FormData) {
   await requireAdmin();
 

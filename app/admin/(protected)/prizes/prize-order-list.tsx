@@ -3,7 +3,7 @@
 import { useMemo, useState, type DragEvent } from "react";
 import { useFormStatus } from "react-dom";
 
-import { reorderPrizes, savePrize } from "@/app/admin/actions";
+import { deletePrize, reorderPrizes, savePrize } from "@/app/admin/actions";
 import {
   Card,
   cx,
@@ -11,6 +11,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/ui";
+import { prizeDeleteWarning } from "@/lib/delete-warnings";
 import { reorderPrizeIds } from "@/lib/prize-order";
 import type { Prize } from "@/types/domain";
 
@@ -171,10 +172,26 @@ export function PrizeOrderList({ prizes }: PrizeOrderListProps) {
               </div>
             </div>
             <PrizeForm prize={prize} />
+            <DeletePrizeForm prize={prize} />
           </Card>
         </div>
       ))}
     </div>
+  );
+}
+
+function DeletePrizeForm({ prize }: { prize: Prize }) {
+  return (
+    <form
+      action={deletePrize}
+      className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4"
+    >
+      <input name="id" type="hidden" value={prize.id} />
+      <p className="text-xs font-semibold leading-5 text-slate-500">
+        {prizeDeleteWarning}
+      </p>
+      <DeleteButton />
+    </form>
   );
 }
 
@@ -240,6 +257,20 @@ function SaveOrderButton({ disabled }: { disabled: boolean }) {
       type="submit"
     >
       {pending ? "저장 중" : "순서 저장"}
+    </button>
+  );
+}
+
+function DeleteButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      className="inline-flex min-h-10 items-center justify-center rounded-[8px] border border-red-200 bg-red-50 px-4 py-2 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+      disabled={pending}
+      type="submit"
+    >
+      {pending ? "삭제 중" : "삭제"}
     </button>
   );
 }
