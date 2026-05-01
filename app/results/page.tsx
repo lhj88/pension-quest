@@ -45,7 +45,7 @@ export default async function ResultsPage() {
             오늘의 보물찾기 결과
           </h1>
           <p className="mt-3 max-w-2xl text-slate-200">
-            당첨, 보너스 QR, 꽝 QR 결과를 진행자가 원하는 속도로 공개하세요.
+            당첨, 꽝 QR, 보너스 QR 결과를 진행자가 원하는 속도로 공개하세요.
           </p>
         </header>
 
@@ -115,7 +115,7 @@ function SpecialClaimGroups({ groups }: { groups: SpecialClaimGroup[] }) {
         <div>
           <h2 className="text-2xl font-black text-slate-950">특별 QR 기록</h2>
           <p className="mt-1 text-sm text-slate-500">
-            보너스와 꽝 QR 기록은 공개 화면에도 함께 나옵니다.
+            꽝과 보너스 QR 기록은 공개 화면에도 함께 나옵니다.
           </p>
         </div>
       </div>

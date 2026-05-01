@@ -70,27 +70,27 @@ const specialClaimGroups: SpecialClaimGroup[] = [
 ];
 
 describe("buildDrawRevealSlides", () => {
-  it("adds one bonus screen and one blank screen after prize result screens", () => {
+  it("adds one blank screen and one bonus screen after prize result screens", () => {
     const slides = buildDrawRevealSlides([drawResult], specialClaimGroups);
 
     expect(
       slides.map((slide) =>
         slide.kind === "prize" ? slide.id : `special-${slide.type}`,
       ),
-    ).toEqual(["draw-1", "special-bonus", "special-blank"]);
+    ).toEqual(["draw-1", "special-blank", "special-bonus"]);
     expect(slides[1]).toMatchObject({
-      kind: "special-group",
-      type: "bonus",
-      claims: [{ participantName: "서연", itemTitle: "축하의 박수" }],
-    });
-    expect(slides[2]).toMatchObject({
       kind: "special-group",
       type: "blank",
       claims: [{ participantName: "도윤", itemTitle: "아쉽지만 꽝" }],
     });
+    expect(slides[2]).toMatchObject({
+      kind: "special-group",
+      type: "bonus",
+      claims: [{ participantName: "서연", itemTitle: "축하의 박수" }],
+    });
   });
 
-  it("shows bonus and blank screens even when there are no prize results", () => {
+  it("shows blank and bonus screens even when there are no prize results", () => {
     const slides = buildDrawRevealSlides([], specialClaimGroups);
 
     expect(slides.map((slide) => slide.kind)).toEqual([
@@ -101,6 +101,6 @@ describe("buildDrawRevealSlides", () => {
       slides.map((slide) =>
         slide.kind === "special-group" ? slide.type : slide.kind,
       ),
-    ).toEqual(["bonus", "blank"]);
+    ).toEqual(["blank", "bonus"]);
   });
 });

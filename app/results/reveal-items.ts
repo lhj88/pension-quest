@@ -24,7 +24,7 @@ export type SpecialRevealSlide = {
 
 export type DrawRevealSlide = PrizeRevealSlide | SpecialRevealSlide;
 
-const specialRevealOrder: SpecialRevealType[] = ["bonus", "blank"];
+const specialRevealOrder: SpecialRevealType[] = ["blank", "bonus"];
 const specialRevealCopy = {
   bonus: {
     eyebrow: "보너스 QR",

@@ -270,7 +270,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
                 결과 공개 준비
               </p>
               <p className="mt-4 text-sm text-slate-600">
-                시작 버튼을 누르면 상품 당첨, 보너스 QR, 꽝 QR 화면이
+                시작 버튼을 누르면 상품 당첨, 꽝 QR, 보너스 QR 화면이
                 차례대로 공개됩니다.
               </p>
             </div>
