@@ -4,10 +4,12 @@ import {
   PrimaryButton,
   SecondaryLink,
   StatCard,
-  TypeBadge,
+  cx,
 } from "@/components/ui";
 import { claimHuntItemByName } from "@/lib/claim";
+import { itemTypeLabel } from "@/lib/labels";
 import { normalizeParticipantName } from "@/lib/participant";
+import type { HuntItemType } from "@/types/domain";
 
 export const dynamic = "force-dynamic";
 
@@ -86,26 +88,21 @@ export default async function ClaimPage({
           <p className="text-sm font-black text-emerald-700">
             {isDuplicate ? "이미 획득한 보물" : "획득 완료"}
           </p>
-          <h1 className="mt-2 text-4xl font-black text-slate-950">
-            {result.item.title}
+          <h1 className="mt-2 flex flex-wrap items-center justify-center gap-3 text-4xl font-black text-slate-950">
+            <ClaimTypeBadge type={result.item.type} />
+            <span>{result.item.title}</span>
           </h1>
-          <p className="mt-3 text-lg font-black text-slate-700">
-            {result.participant.name}님으로 기록했어요
-          </p>
-          <div className="mt-4 flex justify-center">
-            <TypeBadge type={result.item.type} />
-          </div>
           <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-600">
             {result.item.description}
+          </p>
+          <p className="mt-4 text-lg font-black text-slate-700">
+            당첨자: {result.participant.name}
           </p>
           {isDuplicate ? (
             <p className="mt-4 rounded-[8px] bg-amber-50 p-3 text-sm font-bold text-amber-800">
               같은 이름은 이 QR을 한 번만 획득할 수 있어요.
             </p>
           ) : null}
-          <p className="mt-4 rounded-[8px] bg-slate-50 p-3 text-sm font-bold text-slate-700">
-            다음 사람은 새 QR을 찍거나 아래 버튼으로 이름 입력 화면으로 돌아가면 됩니다.
-          </p>
         </Card>
 
         <section className="grid grid-cols-2 gap-3">
@@ -121,6 +118,31 @@ export default async function ClaimPage({
         </div>
       </div>
     </PageShell>
+  );
+}
+
+function ClaimTypeBadge({ type }: { type: HuntItemType }) {
+  const tone: Record<
+    HuntItemType,
+    string
+  > = {
+    normal: "border-sky-300 bg-sky-50 text-sky-800",
+    bonus: "border-amber-300 bg-amber-50 text-amber-800",
+    blank: "border-slate-300 bg-slate-100 text-slate-700",
+    mission: "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800",
+  };
+  const label = itemTypeLabel(type);
+
+  return (
+    <span
+      aria-label={`QR 유형: ${label}`}
+      className={cx(
+        "inline-flex shrink-0 items-center rounded-[8px] border px-3 py-2 text-xl font-black leading-none",
+        tone[type],
+      )}
+    >
+      {label}
+    </span>
   );
 }
 
