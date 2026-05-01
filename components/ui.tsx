@@ -112,10 +112,10 @@ export function TextInput({
   required?: boolean;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-slate-700">
+    <label className="grid min-w-0 gap-2 text-sm font-semibold text-slate-700">
       {label}
       <input
-        className="min-h-11 rounded-[8px] border border-slate-300 bg-white px-3 py-2 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+        className="min-h-11 w-full min-w-0 rounded-[8px] border border-slate-300 bg-white px-3 py-2 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
         defaultValue={defaultValue}
         name={name}
         placeholder={placeholder}
