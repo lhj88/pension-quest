@@ -2,7 +2,6 @@ import {
   Card,
   PageShell,
   PrimaryButton,
-  SecondaryLink,
   StatCard,
   cx,
 } from "@/components/ui";
@@ -10,6 +9,9 @@ import { claimHuntItemByName } from "@/lib/claim";
 import { itemTypeLabel } from "@/lib/labels";
 import { normalizeParticipantName } from "@/lib/participant";
 import type { HuntItemType } from "@/types/domain";
+
+import { CloseClaimButton } from "./close-button";
+import { getClaimMotionClasses } from "./motion";
 
 export const dynamic = "force-dynamic";
 
@@ -80,48 +82,92 @@ export default async function ClaimPage({
   }
 
   const isDuplicate = result.status === "duplicate";
+  const motionClasses = getClaimMotionClasses(isDuplicate);
 
   return (
     <PageShell>
       <div className="grid flex-1 content-center gap-5 py-8">
-        <Card className="border-emerald-200 bg-white p-6 text-center">
-          <p className="text-sm font-black text-emerald-700">
-            {isDuplicate ? "이미 획득한 보물" : "획득 완료"}
-          </p>
-          <h1 className="mt-2 flex flex-wrap items-center justify-center gap-3 text-4xl font-black text-slate-950">
-            <ClaimTypeBadge type={result.item.type} />
-            <span>{result.item.title}</span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-600">
-            {result.item.description}
-          </p>
-          <p className="mt-4 text-lg font-black text-slate-700">
-            당첨자: {result.participant.name}
-          </p>
-          {isDuplicate ? (
-            <p className="mt-4 rounded-[8px] bg-amber-50 p-3 text-sm font-bold text-amber-800">
-              같은 이름은 이 QR을 한 번만 획득할 수 있어요.
-            </p>
+        <Card
+          className={cx(
+            "relative overflow-hidden border-emerald-200 bg-white p-6 text-center",
+            motionClasses.card,
+          )}
+        >
+          {motionClasses.decoration ? (
+            <span
+              aria-hidden="true"
+              className={motionClasses.decoration}
+            />
           ) : null}
+          <div className="relative z-10">
+            <p
+              className={cx(
+                "text-sm font-black text-emerald-700",
+                motionClasses.status,
+              )}
+            >
+              {isDuplicate ? "이미 획득한 보물" : "획득 완료"}
+            </p>
+            <h1
+              className={cx(
+                "mt-2 flex flex-wrap items-center justify-center gap-3 text-4xl font-black text-slate-950",
+                motionClasses.title,
+              )}
+            >
+              <ClaimTypeBadge
+                className={motionClasses.badge}
+                type={result.item.type}
+              />
+              <span>{result.item.title}</span>
+            </h1>
+            <p
+              className={cx(
+                "mx-auto mt-4 max-w-md text-base leading-7 text-slate-600",
+                motionClasses.description,
+              )}
+            >
+              {result.item.description}
+            </p>
+            <p
+              className={cx(
+                "mt-4 text-lg font-black text-slate-700",
+                motionClasses.participant,
+              )}
+            >
+              당첨자: {result.participant.name}
+            </p>
+            {isDuplicate ? (
+              <p className="mt-4 rounded-[8px] bg-amber-50 p-3 text-sm font-bold text-amber-800">
+                같은 이름은 이 QR을 한 번만 획득할 수 있어요.
+              </p>
+            ) : null}
+          </div>
         </Card>
 
         <section className="grid grid-cols-2 gap-3">
-          <StatCard label="점수" value={`+${result.item.points}`} />
-          <StatCard label="응모권" value={`+${result.item.tickets}`} />
+          <div className={motionClasses.stats[0]}>
+            <StatCard label="점수" value={`+${result.item.points}`} />
+          </div>
+          <div className={motionClasses.stats[1]}>
+            <StatCard label="응모권" value={`+${result.item.tickets}`} />
+          </div>
         </section>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          <SecondaryLink href={`/claim/${encodeURIComponent(code)}`}>
-            다른 이름으로 다시 입력
-          </SecondaryLink>
-          <SecondaryLink href="/results">결과 화면 보기</SecondaryLink>
+        <div className="grid">
+          <CloseClaimButton />
         </div>
       </div>
     </PageShell>
   );
 }
 
-function ClaimTypeBadge({ type }: { type: HuntItemType }) {
+function ClaimTypeBadge({
+  className,
+  type,
+}: {
+  className?: string;
+  type: HuntItemType;
+}) {
   const tone: Record<
     HuntItemType,
     string
@@ -139,6 +185,7 @@ function ClaimTypeBadge({ type }: { type: HuntItemType }) {
       className={cx(
         "inline-flex shrink-0 items-center rounded-[8px] border px-3 py-2 text-xl font-black leading-none",
         tone[type],
+        className,
       )}
     >
       {label}
@@ -209,9 +256,6 @@ function ClaimMessage({
       <Card className="text-center">
         <h1 className="text-3xl font-black text-slate-950">{title}</h1>
         <p className="mt-3 text-slate-600">{description}</p>
-        <div className="mt-6">
-          <SecondaryLink href="/results">결과 화면 보기</SecondaryLink>
-        </div>
       </Card>
     </div>
   );
