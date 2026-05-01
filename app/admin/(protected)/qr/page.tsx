@@ -1,7 +1,7 @@
 import QRCode from "qrcode";
 import Image from "next/image";
 
-import { Card, TypeBadge } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { getAllHuntItems } from "@/lib/data";
 import { getPublicAppUrl } from "@/lib/env";
 
@@ -27,8 +27,8 @@ export default async function AdminQrPage() {
       <Card className="no-print">
         <h2 className="text-xl font-black text-slate-950">QR 출력 카드</h2>
         <p className="mt-2 text-sm text-slate-600">
-          브라우저 인쇄 기능으로 저장하거나 출력하세요. 기준 URL은
-          `NEXT_PUBLIC_APP_URL`입니다.
+          브라우저 인쇄 기능으로 저장하거나 출력하세요. 출력 카드에는 QR과
+          URL만 표시됩니다.
         </p>
       </Card>
 
@@ -39,21 +39,16 @@ export default async function AdminQrPage() {
             key={item.id}
           >
             <Image
-              alt={`${item.title} QR`}
+              alt="QR 코드"
               className="mx-auto size-52"
               height={208}
               unoptimized
               src={qrDataUrl}
               width={208}
             />
-            <div className="mt-3 flex justify-center">
-              <TypeBadge type={item.type} />
-            </div>
-            <h3 className="mt-2 text-lg font-black text-slate-950">
-              {item.title}
-            </h3>
-            <p className="mt-1 text-xs font-mono text-slate-500">{item.code}</p>
-            <p className="mt-2 break-all text-xs text-slate-500">{url}</p>
+            <p className="mt-3 break-all font-mono text-xs text-slate-600">
+              {url}
+            </p>
           </article>
         ))}
       </section>
