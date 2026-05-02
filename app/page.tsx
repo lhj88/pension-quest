@@ -1,77 +1,62 @@
-import { registerParticipant } from "@/app/actions";
-import { Card, PageShell, PrimaryButton, SecondaryLink } from "@/components/ui";
-import { getCurrentParticipant } from "@/lib/participant";
+import { PageShell, SecondaryLink } from "@/components/ui";
 
-type HomePageProps = {
-  searchParams: Promise<{
-    error?: string;
-    returnTo?: string;
-  }>;
-};
+const steps = [
+  { label: "QR 찾고", detail: "숨겨진 QR을 발견하면" },
+  { label: "이름 쓰고", detail: "그 자리에서 이름을 남기고" },
+  { label: "응모권 모으기", detail: "추첨 기회를 차곡차곡" },
+  { label: "추첨 받기", detail: "마지막에 선물을 뽑아요" },
+];
 
-export default async function Home({ searchParams }: HomePageProps) {
-  const params = await searchParams;
-  const participant = await getCurrentParticipant();
-  const returnTo =
-    typeof params.returnTo === "string" && params.returnTo.startsWith("/")
-      ? params.returnTo
-      : "/me";
-
+export default function Home() {
   return (
     <PageShell>
       <div className="grid flex-1 content-center gap-6 py-8">
-        <section className="rounded-[8px] border border-emerald-200 bg-emerald-950 p-6 text-white shadow-lg sm:p-8">
-          <p className="text-sm font-bold text-emerald-200">Pension Quest</p>
-          <h1 className="mt-3 text-4xl font-black leading-tight sm:text-6xl">
-            QR을 찾아 점수와 응모권을 모아보세요
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-emerald-50 sm:text-lg">
-            펜션 곳곳에 숨겨진 QR을 열면 이름을 입력하고 바로 보물을 획득할 수 있어요.
-            공용 기기에서도 QR을 찍을 때마다 이름을 다시 받도록 만들었습니다.
-          </p>
+        <section className="overflow-hidden rounded-[8px] border-4 border-slate-950 bg-white shadow-lg">
+          <div className="border-b-4 border-slate-950 bg-sky-100 px-5 py-4 sm:px-8">
+            <p className="text-sm font-black uppercase text-sky-800">
+              Pension Quest
+            </p>
+          </div>
+
+          <div className="grid gap-6 px-5 py-7 sm:px-8 sm:py-9">
+            <div className="grid gap-4">
+              <p className="w-fit rounded-[8px] border-2 border-emerald-500 bg-white px-3 py-1 text-sm font-black text-emerald-700">
+                오늘의 응모권 게임
+              </p>
+              <h1 className="max-w-3xl text-5xl font-black leading-tight text-slate-950 sm:text-7xl">
+                QR을 찾아
+                <span className="block text-yellow-500">응모권을 모아요</span>
+              </h1>
+              <p className="max-w-2xl text-lg font-bold leading-8 text-slate-700">
+                시작은 이 화면이 아니라 숨겨진 QR입니다. QR을 열면 이름을 쓰고
+                응모권을 받을 수 있어요.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-4">
+              {steps.map((step, index) => (
+                <section
+                  className="rounded-[8px] border-2 border-slate-950 bg-slate-50 p-4"
+                  key={step.label}
+                >
+                  <p className="flex size-9 items-center justify-center rounded-full bg-slate-950 text-sm font-black text-white">
+                    {index + 1}
+                  </p>
+                  <h2 className="mt-3 text-2xl font-black leading-tight text-slate-950">
+                    {step.label}
+                  </h2>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">
+                    {step.detail}
+                  </p>
+                </section>
+              ))}
+            </div>
+          </div>
         </section>
 
-        <Card className="grid gap-5">
-          {params.error === "name" ? (
-            <p className="rounded-[8px] bg-red-50 p-3 text-sm font-semibold text-red-700">
-              이름은 1자 이상 30자 이하로 입력해 주세요.
-            </p>
-          ) : null}
-
-          {participant ? (
-            <div className="grid gap-3">
-              <p className="text-sm font-semibold text-slate-500">
-                이 기기에 저장된 참가자
-              </p>
-              <p className="text-2xl font-black text-slate-950">
-                {participant.name}
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <SecondaryLink href="/me">내 현황 보기</SecondaryLink>
-                <SecondaryLink href={returnTo}>이동하기</SecondaryLink>
-              </div>
-            </div>
-          ) : null}
-
-          <form action={registerParticipant} className="grid gap-4">
-            <input name="returnTo" type="hidden" value={returnTo} />
-            <label className="grid gap-2 text-sm font-bold text-slate-700">
-              참가자 이름
-              <input
-                autoComplete="name"
-                className="min-h-12 rounded-[8px] border border-slate-300 bg-white px-4 text-lg font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                defaultValue={participant?.name}
-                maxLength={30}
-                name="name"
-                placeholder="예: 지수"
-                required
-              />
-            </label>
-            <PrimaryButton>
-              {participant ? "이름 저장하고 계속하기" : "참가 시작하기"}
-            </PrimaryButton>
-          </form>
-        </Card>
+        <nav className="grid sm:max-w-xs">
+          <SecondaryLink href="/help">설명 보기</SecondaryLink>
+        </nav>
       </div>
     </PageShell>
   );

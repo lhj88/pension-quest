@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 import { cx, EmptyState } from "@/components/ui";
@@ -27,20 +28,27 @@ export function DrawReveal({ slides }: DrawRevealProps) {
   const [mode, setMode] = useState<RevealMode>("name-first");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isOpeningVisible, setIsOpeningVisible] = useState(false);
   const [isSecondPartVisible, setIsSecondPartVisible] = useState(false);
 
   const currentSlide = slides[currentIndex];
+  const isShowingResult = hasStarted && !isOpeningVisible;
   const hasPrizeSlides = slides.some((slide) => slide.kind === "prize");
   const isPrizeSlide = currentSlide?.kind === "prize";
   const isCurrentSlideComplete =
-    hasStarted &&
+    isShowingResult &&
     Boolean(currentSlide) &&
     (!isPrizeSlide || isSecondPartVisible);
   const canRevealSecondPart =
-    hasStarted && Boolean(currentSlide) && isPrizeSlide && !isSecondPartVisible;
-  const canShowPreviousResult = hasStarted && currentIndex > 0;
+    isShowingResult &&
+    Boolean(currentSlide) &&
+    isPrizeSlide &&
+    !isSecondPartVisible;
+  const canAdvanceOpening = hasStarted && isOpeningVisible;
+  const canShowPreviousResult = isShowingResult && currentIndex > 0;
   const canShowNextResult =
-    isCurrentSlideComplete && currentIndex < slides.length - 1;
+    canAdvanceOpening ||
+    (isCurrentSlideComplete && currentIndex < slides.length - 1);
   const isComplete =
     isCurrentSlideComplete && currentIndex === slides.length - 1;
 
@@ -73,6 +81,12 @@ export function DrawReveal({ slides }: DrawRevealProps) {
     function handleKeyDown(event: KeyboardEvent) {
       const intent = getRevealNavigationIntent(event.key);
 
+      if (intent === "next" && canAdvanceOpening) {
+        event.preventDefault();
+        setIsOpeningVisible(false);
+        return;
+      }
+
       if (intent === "previous" && currentIndex > 0) {
         event.preventDefault();
         setIsSecondPartVisible(false);
@@ -97,6 +111,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [
+    canAdvanceOpening,
     currentIndex,
     hasStarted,
     isCurrentSlideComplete,
@@ -118,6 +133,11 @@ export function DrawReveal({ slides }: DrawRevealProps) {
     }
 
     event.preventDefault();
+    if (canAdvanceOpening) {
+      setIsOpeningVisible(false);
+      return;
+    }
+
     revealSecondPart();
   }
 
@@ -125,6 +145,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
     setMode(nextMode);
     setCurrentIndex(0);
     setHasStarted(false);
+    setIsOpeningVisible(false);
     setIsSecondPartVisible(false);
   }
 
@@ -134,6 +155,11 @@ export function DrawReveal({ slides }: DrawRevealProps) {
   }
 
   function showNextResult() {
+    if (canAdvanceOpening) {
+      setIsOpeningVisible(false);
+      return;
+    }
+
     if (!canShowNextResult) {
       return;
     }
@@ -145,6 +171,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
   function startReveal() {
     void requestRevealLayerFullscreen(revealLayerRef.current);
     setIsSecondPartVisible(false);
+    setIsOpeningVisible(true);
     setHasStarted(true);
   }
 
@@ -163,7 +190,8 @@ export function DrawReveal({ slides }: DrawRevealProps) {
         <div>
           <h2 className="text-2xl font-black text-slate-950">결과 공개</h2>
           <p className="mt-1 text-sm text-slate-600">
-            현재 공개 {hasStarted ? currentIndex + 1 : 0} / {slides.length}
+            현재 공개 {isShowingResult ? currentIndex + 1 : 0} /{" "}
+            {slides.length}
           </p>
         </div>
         {hasPrizeSlides ? (
@@ -191,29 +219,48 @@ export function DrawReveal({ slides }: DrawRevealProps) {
         aria-label={
           canRevealSecondPart
             ? "다음 공개 정보를 보여주기"
+            : canAdvanceOpening
+              ? "첫 결과로 이동하기"
             : "결과 공개 화면"
         }
         className={cx(
           "draw-reveal-stage reveal-stage overflow-hidden rounded-[8px] border border-amber-200 bg-amber-50",
-          canRevealSecondPart &&
+          (canRevealSecondPart || canAdvanceOpening) &&
             "cursor-pointer transition hover:border-amber-300",
         )}
         data-celebrate={isCurrentSlideComplete ? "true" : "false"}
-        key={hasStarted && currentSlide ? currentSlide.id : "waiting"}
-        onClick={revealSecondPart}
+        key={
+          hasStarted
+            ? isOpeningVisible
+              ? "opening"
+              : currentSlide?.id
+            : "waiting"
+        }
+        onClick={() => {
+          if (canAdvanceOpening) {
+            setIsOpeningVisible(false);
+            return;
+          }
+
+          revealSecondPart();
+        }}
         onKeyDown={handleRevealKeyDown}
-        role={canRevealSecondPart ? "button" : undefined}
-        tabIndex={canRevealSecondPart ? 0 : -1}
+        role={canRevealSecondPart || canAdvanceOpening ? "button" : undefined}
+        tabIndex={canRevealSecondPart || canAdvanceOpening ? 0 : -1}
       >
         <div className="border-b border-amber-200 bg-white/70 px-4 py-3">
           <p className="text-sm font-black text-amber-900">
-            {hasStarted && currentSlide
+            {hasStarted && isOpeningVisible
+              ? "결과 공개 준비"
+              : hasStarted && currentSlide
               ? getSlideStageLabel(currentSlide, currentIndex)
               : "공개 대기"}
           </p>
         </div>
         <div className="draw-reveal-content grid min-h-80 content-center gap-4 p-5 text-center sm:p-8">
-          {hasStarted && currentSlide ? (
+          {hasStarted && isOpeningVisible ? (
+            <ResultsOpeningPanel />
+          ) : hasStarted && currentSlide ? (
             currentSlide.kind === "prize" ? (
               <>
                 <RevealPanel
@@ -267,7 +314,7 @@ export function DrawReveal({ slides }: DrawRevealProps) {
                   : "특별 QR 공개"}
               </p>
               <p className="mt-3 text-4xl font-black text-slate-950 sm:text-6xl">
-                결과 공개 준비
+                공개 대기
               </p>
               <p className="mt-4 text-sm text-slate-600">
                 시작 버튼을 누르면 상품 당첨, 꽝 QR, 보너스 QR 화면이
@@ -317,6 +364,30 @@ export function DrawReveal({ slides }: DrawRevealProps) {
           모든 결과를 공개했습니다.
         </p>
       ) : null}
+    </div>
+  );
+}
+
+export function ResultsOpeningPanel() {
+  return (
+    <div className="mx-auto grid w-full max-w-5xl justify-items-center gap-3 sm:gap-4">
+      <Image
+        alt="유난히 내성적이었던 어릴 적 우리들"
+        className="max-h-[min(74vh,52rem)] w-auto max-w-full rounded-[8px] bg-white object-contain shadow-sm"
+        height={1402}
+        priority
+        src="/results-opening.png"
+        width={1122}
+      />
+      <div>
+        <p className="text-sm font-black text-amber-800">오프닝</p>
+        <p className="mt-2 text-4xl font-black text-slate-950 sm:text-6xl">
+          결과 공개 준비
+        </p>
+        <p className="mt-3 text-sm font-bold text-slate-600">
+          다음으로 넘기면 첫 결과가 공개됩니다.
+        </p>
+      </div>
     </div>
   );
 }
